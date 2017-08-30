@@ -44,6 +44,13 @@
  (fn [db [_]]
    (tb/log "Submitting:" (:new-account-info-card db))))
 
+(reg-event-db
+ :payment.sources.verify-deposit-amounts/update
+ [(path db/path)]
+ (fn [db [_ idx v]]
+   (tb/log "setting amount" idx "to" (js/parseInt v))))
+   ;;(db/set-deposit-amount db idx (js/parseInt v))))
+
 ;;(reg-event-fx
 ;; :payment.sources.source/change-autopay
 ;; [(path db/path)]

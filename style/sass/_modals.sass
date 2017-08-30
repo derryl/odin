@@ -1,6 +1,37 @@
 
 $modal-button-spacing: .5rem
+$modal-border-radius:  4px
+
+.ant-modal-header
+  background: $off-white
+  padding: 1rem
+  .ant-modal-title
+    font-size: 1.2rem
+
+.ant-modal-content
+  border-radius: $modal-border-radius
 
 .ant-modal-footer
+  background: $off-white
   .select + .select, .select + .button, .button + .button
     margin-left: $modal-button-spacing
+
+
+.ant-modal.is-flush
+  .ant-modal-body
+    padding-left: 0
+    padding-right: 0
+    padding-bottom: 0
+
+.is-modal-footer
+  background: $off-white
+  padding: 1rem
+  margin-top: 1rem
+  border-top: 1px solid #dbdbdb
+  text-align: right
+
+  border-bottom-left-radius: $modal-border-radius
+  border-bottom-right-radius: $modal-border-radius
+
+  &.centered
+    text-align: center

@@ -6,6 +6,7 @@
             [odin.routes :as routes]
             [antizer.reagent :as ant]
             [reagent.core :as r]
+            [odin.utils.dom :as dom]
             [odin.utils.formatters :as format]
             [odin.components.ui :as ui]
             [odin.components.payments :as payments-ui]
@@ -33,14 +34,68 @@
         [:span.flex-pin-right (str "**** " last4)]]]))])
 
 
+(def ^:private verify-description
+  [:div
+   [:p "Your bank information has been successfully submitted, and the deposit process initiated."]
+   [:p "This process usually takes "
+    [:b "1-3 business days"]
+    " to complete. Check your bank account over the coming few days, and "
+    " look for two deposits with statement descriptions of "
+    [:b "VERIFICATION."]]
+   [:p "When you see the deposits, enter the amounts below in " [:em "cents."] " (No decimal point.)"]])
+
+(defn- verify-form []
+  (fn []
+    (let [[amount-1 amount-2] [nil nil]
+          attrs               {:min 1 :step 1}]
+     [:div.columns.control
+      {:style {:margin-top "8px"}}
+      [:div.column.control
+       [:label.label "First deposit"]
+       [ant/input
+        (merge {:required    true
+                :type        "number"
+                :placeholder "e.g. 32"
+                :value       amount-1
+                :step        1
+                :on-change   #(dispatch [:payment.sources.verify-deposit-amounts/update 0 (dom/val %)])}
+               attrs)]]
+      [:div.column.control
+       [:label.label "Second deposit"]
+       [ant/input
+        (merge {:required    true
+                :type        "number"
+                :placeholder "e.g. 45"
+                :value       amount-2
+                :step        1
+                :on-change   #(dispatch [:payment.sources.verify-deposit-amounts/update 1 (dom/val %)])}
+               attrs)]]])))
+
+(defn modal-verify-bank
+  [source is-visible?]
+  (let [{name :name} source]
+   [ant/modal {:title     (str "Verify " name)
+               :width     "640px"
+               :visible   @is-visible?
+               :on-ok     #(reset! is-visible? false)
+               :on-cancel #(reset! is-visible? false)
+               :footer    [(r/as-element [:a.button {:on-click #(reset! is-visible? false)} "Cancel"])
+                           (r/as-element [:a.button.is-success "Verify Deposits"])]}
+    verify-description
+    [verify-form]]))
+
 
 (defn source-detail
   "Display information about the currently-selected payment source."
   [source]
-  (let [{type :type
-         name :name
-         last4 :last4
-         autopay-on :autopay} source]
+  (let [{type    :type
+         name    :name
+         last4   :last4
+         autopay :autopay
+         status  :status} source
+        autopay-on?        (= autopay true)
+        verified?          (and (= type :bank) (= status "vverified"))
+        modal-verify-bank? (r/atom false)]
    [:div.card
     [:div.card-content
      [:div.flexrow
@@ -49,14 +104,19 @@
       [:h3 (str name " **** " last4)]]]
     ;; Buttons
     [:footer.card-footer
-     [:div.card-footer-item]
-     (if (= autopay-on true)
-      [:a.card-footer-item {:class "is-success"}
+     (if verified?
+       [:div.card-footer-item]
+       [:a.card-footer-item {:on-click #(swap! modal-verify-bank? not)}
+        "Verify Account"])
+     (if autopay-on?
+      [:a.card-footer-item {:disabled (not verified?)
+                            :class    "is-success"}
         [:span.icon.is-small [:i.fa.fa-check-circle]]
         [:span "Autopay On"]]
-      [:a.card-footer-item
+      [:a.card-footer-item {:disabled (not verified?)}
         [:span "Enable Autopay"]])
-     [:a.card-footer-item.is-danger "Unlink"]]]))
+     [:a.card-footer-item.is-danger {:disabled (not verified?)} "Unlink"]]
+    [modal-verify-bank source modal-verify-bank?]]))
 
 
 (defn source-payment-history
@@ -110,8 +170,8 @@
      [:p.pad "Upon adding your bank account, we'll make two small transactions to verify ownership.
           Your account will be ready to use after you've verified the amounts contained in those transactions.
           (Note: It may take up to 2 days for these transactions to appear.)"]
-     [:hr]
-     [:div.align-right
+     ;;[:hr]
+     [:div.is-modal-footer
       [:a.button {:on-click #(reset! is-visible? false)} "Cancel"]
       [:a.button {:on-click #(ant/reset-fields my-form)} "Clear Form"]
       [:a.button.is-primary {:on-click #(dispatch [:payment.sources.add-new-account/submit-bank!])}
@@ -164,8 +224,8 @@
          [ant/input {:placeholder "123"
                      :style {:width "50px"}
                      :on-change #(dispatch [:payment.sources.add-new-account/update-card :cvv (-> % .-target .-value)])}])]]
-     [:hr]
-     [:div.align-right
+     ;;[:hr]
+     [:div.is-modal-footer
       [:a.button {:on-click #(reset! is-visible? false)} "Cancel"]
       [:a.button.is-primary {:on-click #(submit-if-valid)} "Add Credit Card"]]])))
 
@@ -180,8 +240,8 @@
       [:pre.is-size-4 "1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX"]
       [:br]
       [:p.is-size-6. "BTC sent to this address will credit toward your Starcity account balance, which you can then use to make payments."]]]]
-   [:hr]
-   [:div.align-right
+   ;;[:hr]
+   [:div.is-modal-footer
     [:a.button {:on-click #(reset! is-visible? false)} "Cancel"]
     [:a.button.is-primary "OK"]]])
 
@@ -193,7 +253,8 @@
                :visible   @is-visible?
                :on-ok     #(reset! is-visible? false)
                :on-cancel #(reset! is-visible? false)
-               :footer    nil}
+               :footer    nil
+               :class     "is-flush"}
     [:div
      [:div.tabs.is-centered
       [:ul
