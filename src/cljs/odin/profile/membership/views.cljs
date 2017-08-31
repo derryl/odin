@@ -3,6 +3,7 @@
              [odin.components.membership :as member-ui]
              [odin.components.orders :as orders-ui]
              [odin.utils.formatters :as format]
+             [re-frame.core :as rf :refer [dispatch subscribe]]
              [odin.components.notifications :as notification]
              [antizer.reagent :as ant]))
 
@@ -87,28 +88,48 @@
    [notification/banner "Your next payment is due "]])
 
 
+(defn account-quicklook
+  "Component to display high-level information for a Member."
+  [user]
+  (let [{name  :name
+         phone :phone
+         email :email} user]
+   [:div.account-quicklook.flexbox
+    [:div.account-entry-avatar.space-right
+     [:img.account-entry-avatar-image {:src "/assets/images/bio-josh.jpg"}]]
+    [:div.account-entry-metadata
+     [:h2 name]
+     [:p.account-contact-item
+      ; [:span.icon.is-small [:i.fa.fa-envelope-o]]
+      (format/email-link email)]
+     [:p.account-contact-item
+      ; [:span.icon.is-small [:i.fa.fa-phone]]
+      (format/phone-number phone)]]]))
+
 
 
 (defn membership []
-  [:div
-   [:div.view-header
-    [:h1 (l10n/translate :membership)]]
-    ;;[:p "View and manage your rental agreement and any premium subscriptions you've signed up for."]]
-   ;;[:br]
+  (let [user (subscribe [:profile/account])]
+    [:div
+     [:div.view-header
+      [:h1 (l10n/translate :membership)]]
+      ;;[:p "View and manage your rental agreement and any premium subscriptions you've signed up for."]]
+     ;;[:br]
 
-   [:div.columns
-    [:div.column
-     [:h2 "Summary"]
-     [membership-summary]]
-     ;;[:h2 "Subscriptions"]
-     ;;(for [service mock-services]
-       ;;^{:key (get service :id)}
-       ;;[card-service-summary service])
-     ;;[:h4 [:a "View all services"]]]
+     [:div.columns
+      [:div.column
+       [account-quicklook @user]]
+       ;;[:h2 "Summary"]
+       ;;[membership-summary]]
+       ;;[:h2 "Subscriptions"]
+       ;;(for [service mock-services]
+         ;;^{:key (get service :id)}
+         ;;[card-service-summary service])
+       ;;[:h4 [:a "View all services"]]]
 
-    [:div.column.is-5
-     [:h2 "Rental Agreement"]
-     [card-license-summary mock-member-license]]]])
+      [:div.column.is-5
+       [:h2 "Rental Agreement"]
+       [card-license-summary mock-member-license]]]]))
 
-   ;;[:p "Rent plus subscriptions: " [:b "$1,545 / mo."]]])
-   ;;[:hr]])
+     ;;[:p "Rent plus subscriptions: " [:b "$1,545 / mo."]]])
+     ;;[:hr]])

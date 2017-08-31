@@ -21,6 +21,7 @@
  :profile.payments/fetch
  [(path db/path)]
  (fn [{:keys [db]} [_ account-id]]
+   ;;(tb/log "yo")
    {:db      (assoc-in db [:loading :payments/list] true)
     :graphql {:query
               [[:payments {:account account-id}
