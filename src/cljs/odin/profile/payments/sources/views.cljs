@@ -30,10 +30,10 @@
 
        ;;[:span.payment-icon-top-right
          ;;(payments-ui/payment-source-icon (or type :bank))]
-       [:div.source-list-metadata
-        [:span.source-list-type-icon
+       [:div.source-list-metadata.flexrow
+        [:span.source-list-type-icon.flexrow
          (payments-ui/payment-source-icon (or type :bank))
-         (:expires source)]
+         [:span.ml1.fs3 (:expires source)]]
         (when (true? (:default source))
           [ant/tooltip {:title "Default payment source"}
            [:div.default-source-indicator
